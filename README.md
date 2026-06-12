@@ -24,9 +24,13 @@ Then open **http://localhost:8000** on your computer.
 
 ## Install on your phone
 
+**Live deployment: <https://yuvalm2.github.io/gym-coach/>** — deploying an update is just
+`git push` (GitHub Pages rebuilds in ~1 minute; the network-first service worker picks the
+new version up on the next online launch).
+
 A real install (standalone window + offline) requires a **secure origin**: `localhost` or any
-HTTPS host (GitHub Pages, Cloudflare Pages, …). Over plain-HTTP LAN IP the app only runs as a
-browser tab — no service worker, no install prompt. Once served over HTTPS:
+HTTPS host. Over plain-HTTP LAN IP the app only runs as a browser tab — no service worker,
+no install prompt. On the HTTPS URL above:
 
 - **Android Chrome**: menu → *Add to Home screen → Install*.
 - **iOS Safari**: share sheet → *Add to Home Screen*.
