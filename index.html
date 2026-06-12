@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="description" content="Plan and track machine-based gym workouts across multiple gyms.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gym Coach">
+  <title>Gym Coach</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app" class="app"></div>
+  <nav class="nav">
+    <button class="nav-btn active" data-view="today"><span class="ni">🏋️</span><span>Today</span></button>
+    <button class="nav-btn" data-view="gyms"><span class="ni">📍</span><span>Gyms</span></button>
+    <button class="nav-btn" data-view="history"><span class="ni">📈</span><span>History</span></button>
+    <button class="nav-btn" data-view="profile"><span class="ni">⚙️</span><span>Profile</span></button>
+  </nav>
+  <script src="./db.js"></script>
+  <script src="./library.js"></script>
+  <script src="./engine.js"></script>
+  <script src="./identify.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
