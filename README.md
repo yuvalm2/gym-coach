@@ -66,6 +66,20 @@ The app ships tuned for cautious machine-based training: weight loss / condition
 | `sw.js` | Offline cache (network-first with cache fallback) |
 | `tools/make_icons.py` | Regenerates the icon set (stdlib only) |
 
+## Tests
+
+The pure workout engine ([engine.js](engine.js)) has unit tests using the
+built-in Node test runner (no dependencies):
+
+```bash
+node --test
+```
+
+They cover day-template selection and fallback, joint-care/complexity filtering,
+machine rotation (never-used beats recently-used), gym availability, and
+superset block building. CI runs them on every push/PR via
+[.github/workflows/tests.yml](.github/workflows/tests.yml).
+
 ## Roadmap
 
 - Progress charts; rest timer; weekly volume per muscle.
