@@ -186,3 +186,9 @@ const Engine = (() => {
 
   return { GOAL_PRESETS, TEMPLATES, generateSession, evaluateExercise, templateDays };
 })();
+
+// Make the pure engine importable under Node for unit tests, without affecting
+// the browser (where `module` is undefined and the global `Engine` is used).
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Engine;
+}
