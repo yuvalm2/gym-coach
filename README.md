@@ -43,7 +43,7 @@ online launch; offline it falls back to the cached app (worst case after a 3 s t
 
 ## Screens
 
-- **Today** — pick a gym → generated session (supersets/finisher tuned to your goal) → log sets/reps/weight → *Finish & save*. Tap **↻ swap** to cycle alternatives.
+- **Today** — pick a gym → generated session (supersets/finisher tuned to your goal) → log sets/reps/weight → *Finish & save*. Tap **↻ swap** to cycle alternatives. Each exercise shows a machine illustration and its muscles; tap **ⓘ Guide** for a detailed drawing, the muscles worked (primary/secondary), and how-to / efficiency / safety notes — or attach your own photo. Tap any muscle name for a body-map tooltip. A **muscle-coverage** map fills in as you log: green = worked this visit, amber = in the plan but not yet, grey = not in today's plan.
 - **Gyms** — add a gym (pre-filled with common machines), tick what's available, ★ favourite / 🚫 avoid any exercise, add a custom machine — or **photograph one**: *Add by photo* sends the picture to Claude, which matches it against the catalog or drafts a fully tagged entry (muscles, complexity, joint load + mitigation cue) for you to review and accept.
 - **History** — past sessions, expandable.
 - **Profile** — goal *(configurable)*, days/week, variety, joint handling, knee/back/shoulder care, complexity. Export/Import a JSON backup (photos excluded). Holds your **Anthropic API key** for photo ID — stored only in this device's IndexedDB, sent only to api.anthropic.com (browser-direct, no middle server).
@@ -62,6 +62,8 @@ The app ships tuned for cautious machine-based training: weight loss / condition
 | `library.js` | Built-in tagged exercise catalog (`MUSCLES`, `PATTERNS`, `LIBRARY`) |
 | `engine.js` | Goal presets, day templates, session generator |
 | `identify.js` | Photo → machine ID via the Claude API (`claude-opus-4-8`, strict-JSON output; SDK loaded on demand from jsDelivr) |
+| `art.js` | Inline SVG visuals: per-machine line icons + detailed illustrations, and the front/back muscle body-map (highlight, primary/secondary, coverage) |
+| `guide.js` | Per-exercise instructions — how-to / efficiency / injury-prevention |
 | `app.js` | UI, state, event wiring |
 | `sw.js` | Offline cache (network-first with cache fallback) |
 | `tools/make_icons.py` | Regenerates the icon set (stdlib only) |
@@ -77,8 +79,10 @@ node --test
 
 They cover day-template selection and fallback, joint-care/complexity filtering,
 machine rotation (never-used beats recently-used), gym availability, and
-superset block building. CI runs them on every push/PR via
-[.github/workflows/tests.yml](.github/workflows/tests.yml).
+superset block building. A second suite ([tests/content.test.js](tests/content.test.js))
+guards the content: every machine has a line icon, a detailed illustration and a
+per-exercise guide, and every muscle has a body-map region. CI runs them on every
+push/PR via [.github/workflows/tests.yml](.github/workflows/tests.yml).
 
 ## Roadmap
 

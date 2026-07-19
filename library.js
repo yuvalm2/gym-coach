@@ -83,3 +83,6 @@ const LIBRARY = [
   { id: 'rower', name: 'Rowing Machine', type: 'cardio', pattern: 'conditioning', primary: ['cardio'], secondary: ['upper_back'], complexity: 'moderate', joints: ['spine'], friendlyFor: ['spine'], mitigation: { spine: 'Drive with the legs first and keep a neutral spine; don’t round your back at the catch.' }, common: false },
   { id: 'stairmaster', name: 'Stairmaster', type: 'cardio', pattern: 'conditioning', primary: ['cardio'], secondary: [], complexity: 'moderate', joints: ['knee'], friendlyFor: [], mitigation: {}, common: false }
 ];
+
+// Importable under Node for the content coverage test; harmless in the browser.
+if (typeof module !== 'undefined' && module.exports) module.exports = { MUSCLES, PATTERNS, LIBRARY };

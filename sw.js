@@ -3,7 +3,7 @@
 // timeout) falling back to cache for every same-origin GET. So code/library
 // changes show up on the next online load — no stale-app-forever — while a
 // dead-zone gym still gets the cached app after at most the timeout.
-const CACHE = 'gym-coach-v3';
+const CACHE = 'gym-coach-v4';
 const NETWORK_TIMEOUT_MS = 3000;
 const ASSETS = [
   './',
@@ -13,6 +13,8 @@ const ASSETS = [
   './library.js',
   './engine.js',
   './identify.js',
+  './art.js',
+  './guide.js',
   './app.js',
   './manifest.webmanifest',
   './icons/icon-192.png',

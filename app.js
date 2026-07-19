@@ -11,7 +11,8 @@ const App = {
   profile: null, gyms: [], sessions: [], customExercises: [],
   currentGymId: null, editingGymId: null, view: 'today',
   plan: null, log: {},
-  aiKeySet: false, photoDraft: null
+  aiKeySet: false, photoDraft: null,
+  exPhotoIds: []   // exercise ids that have a user-attached photo (meta: exphoto:<id>)
 };
 
 // ---------- helpers ----------
@@ -24,6 +25,9 @@ const exById = (id) => allExercises().find((e) => e.id === id);
 const gymById = (id) => App.gyms.find((g) => g.id === id);
 const currentGym = () => gymById(App.currentGymId) || App.gyms[0] || null;
 const muscleNames = (keys) => (keys || []).map((k) => MUSCLES[k] || k).join(', ');
+const muscleTag = (k, muted) => `<button class="mtag${muted ? ' muted' : ''}" data-muscle="${esc(k)}">${esc(MUSCLES[k] || k)}</button>`;
+const muscleTags = (keys, muted) => (keys || []).map((k) => muscleTag(k, muted)).join('<span class="msep">, </span>');
+const hasExPhoto = (id) => App.exPhotoIds.indexOf(id) >= 0;
 const fmtDate = (iso) => new Date(iso).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const saveProfile = () => DB.setMeta('profile', App.profile);
 const saveGym = (g) => DB.put('gyms', g);
@@ -105,6 +109,7 @@ function viewToday() {
   if (!p) { body += infoCard('Couldn’t build a session for this gym.'); return section('Today', body); }
   const pre = p.preset;
   body += `<div class="plan-meta"><span class="pill accent">${esc(p.templateName)}</span><span class="pill">${esc(pre.label)}</span><span class="pill">${pre.repLow}–${pre.repHigh} reps</span><span class="pill">${pre.restSec}s rest</span></div>`;
+  body += `<div id="covSlot">${renderCoverage()}</div>`;
   body += p.blocks.map(renderBlock).join('');
   body += `<button class="primary big" data-action="finish">Finish &amp; save workout</button>`;
   return section('Today', body);
@@ -139,10 +144,161 @@ function renderItem(it) {
   }
   return `<div class="card ex">
     <div class="ex-top">
-      <div><div class="ex-name">${esc(ex.name)} ${newBadge}</div>
-      <div class="ex-sub">${esc(muscleNames(ex.primary))}${ex.secondary && ex.secondary.length ? ` <span class="muted">· ${esc(muscleNames(ex.secondary))}</span>` : ''}</div></div>
-      <div class="ex-actions"><span class="type-badge">${esc(ex.type)}</span>${swapBtn}</div>
+      <button class="ex-art" data-action="ex-sheet" data-ex="${ex.id}" aria-label="Details for ${esc(ex.name)}">${Art.machineArt(ex)}</button>
+      <div class="ex-main"><div class="ex-name">${esc(ex.name)} ${newBadge}</div>
+      <div class="ex-sub">${muscleTags(ex.primary)}${ex.secondary && ex.secondary.length ? `<span class="muted"> · </span>${muscleTags(ex.secondary, true)}` : ''}</div></div>
+      <div class="ex-actions"><button class="mini" data-action="ex-sheet" data-ex="${ex.id}">ⓘ&nbsp;Guide</button><span class="type-badge">${esc(ex.type)}</span>${swapBtn}</div>
     </div>${cues}<div class="sets">${logUI}</div></div>`;
+}
+
+// ---------- session muscle coverage ----------
+// State per muscle: 'done' (logged a set on an exercise hitting it),
+// 'plan' (in today's session, not logged yet), or absent = not in today's plan.
+function coverageState() {
+  const p = App.plan;
+  const st = {};
+  if (!p) return st;
+  const musclesOf = (ex) => (ex.primary || []).concat(ex.secondary || []);
+  p.items.forEach((it) => { if (!it.missing && it.exercise) musclesOf(it.exercise).forEach((m) => { if (!st[m]) st[m] = 'plan'; }); });
+  p.items.forEach((it) => {
+    if (it.missing || !it.exercise) return;
+    const logged = (App.log[it.exercise.id] || []).some((s) => s && (s.weight != null || s.reps != null || s.minutes != null));
+    if (logged) musclesOf(it.exercise).forEach((m) => { st[m] = 'done'; });
+  });
+  return st;
+}
+
+function renderCoverage() {
+  const st = coverageState();
+  const keys = Object.keys(MUSCLES);
+  const done = keys.filter((k) => st[k] === 'done');
+  const planned = keys.filter((k) => st[k] === 'plan');
+  const inPlay = done.length + planned.length;
+  if (!inPlay) return '';
+  const still = planned.map((k) => MUSCLES[k]).join(', ');
+  return `<div class="card coverage">
+    <div class="cov-top"><span class="cov-h">Today's muscle coverage</span><span class="cov-count">${done.length}<small> / ${inPlay} worked</small></span></div>
+    <div class="cov-body">
+      <div class="cov-map">${Art.coverageMap(st)}</div>
+      <div class="cov-side">
+        <div class="cov-leg"><span class="dot done"></span>Worked this visit</div>
+        <div class="cov-leg"><span class="dot plan"></span>In the plan — not yet</div>
+        <div class="cov-leg"><span class="dot off"></span>Not in today's plan</div>
+        ${planned.length ? `<p class="cov-still">Still to hit: <b>${esc(still)}</b></p>` : `<p class="cov-still done">All planned muscles worked 💪</p>`}
+      </div>
+    </div>
+  </div>`;
+}
+function refreshCoverage() { const s = $('#covSlot'); if (s) s.innerHTML = renderCoverage(); }
+
+// ---------- muscle tooltip (single muscle) ----------
+let mpopEl = null;
+function ensureMpop() {
+  if (!mpopEl) { mpopEl = document.createElement('div'); mpopEl.className = 'mpop'; mpopEl.hidden = true; document.body.appendChild(mpopEl); }
+  return mpopEl;
+}
+function openMusclePopover(key, target) {
+  const info = Art.MUSCLE_INFO[key];
+  if (!info) return;
+  const el = ensureMpop();
+  if (el.dataset.key === key && !el.hidden) { closeMusclePopover(); return; }
+  el.dataset.key = key;
+  el.innerHTML = `<div class="mpop-h">${esc(info.name)}</div><div class="mpop-map">${Art.bodyMap([key])}</div><div class="mpop-d">${esc(info.blurb)}</div>`;
+  el.hidden = false;
+  const r = target.getBoundingClientRect();
+  const w = el.offsetWidth, h = el.offsetHeight;
+  let left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8));
+  let top = r.bottom + 8;
+  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+  el.style.left = left + 'px'; el.style.top = top + 'px';
+}
+function closeMusclePopover() { if (mpopEl) { mpopEl.hidden = true; mpopEl.dataset.key = ''; } }
+
+// ---------- exercise detail sheet ----------
+let sheetUrl = null;
+function ensureSheet() {
+  let el = $('#sheet');
+  if (el) return el;
+  el = document.createElement('div');
+  el.id = 'sheet'; el.className = 'sheet-overlay'; el.hidden = true;
+  el.addEventListener('click', (e) => {
+    const mus = e.target.closest('[data-muscle]');
+    if (mus) { e.stopPropagation(); openMusclePopover(mus.dataset.muscle, mus); return; }
+    if (e.target === el) { closeSheet(); return; }
+    const t = e.target.closest('[data-action]');
+    if (!t) return;
+    if (t.dataset.action === 'sheet-close') closeSheet();
+    else if (t.dataset.action === 'ex-photo-remove') removeExPhoto(t.dataset.ex);
+  });
+  el.addEventListener('change', (e) => {
+    if (e.target.id !== 'exPhotoFile') return;
+    const f = e.target.files && e.target.files[0], id = e.target.dataset.ex;
+    e.target.value = '';
+    if (f) handleExPhoto(f, id);
+  });
+  document.body.appendChild(el);
+  return el;
+}
+function openSheet(exId) {
+  const ex = exById(exId);
+  if (!ex) return;
+  closeMusclePopover();
+  renderSheetInto(ensureSheet(), ex);
+  $('#sheet').hidden = false;
+  document.body.classList.add('modal-open');
+}
+function closeSheet() {
+  const el = $('#sheet'); if (el) el.hidden = true;
+  document.body.classList.remove('modal-open');
+  if (sheetUrl) { URL.revokeObjectURL(sheetUrl); sheetUrl = null; }
+}
+function renderSheetInto(el, ex) {
+  const g = Guide.forExercise(ex);
+  const photo = hasExPhoto(ex.id);
+  el.innerHTML = `<div class="sheet-card" role="dialog" aria-label="${esc(ex.name)}">
+    <button class="sheet-x" data-action="sheet-close" aria-label="Close">✕</button>
+    <div class="sheet-head"><span class="sname">${esc(ex.name)}</span><span class="type-badge">${esc(ex.type)}</span></div>
+    <div class="sheet-vis">
+      <div class="sh-ill" id="shIll">${Art.machineArtDetailed(ex) || Art.machineArt(ex)}</div>
+      <div class="sh-map">${Art.exerciseMap(ex.primary, ex.secondary)}
+        <div class="worklist"><span class="wp">${esc(muscleNames(ex.primary))}</span>${ex.secondary && ex.secondary.length ? `<span class="ws">${esc(muscleNames(ex.secondary))}</span>` : ''}</div>
+      </div>
+    </div>
+    <div class="sh-photo">
+      <label class="mini filebtn">📷 ${photo ? 'Replace photo' : 'Add your photo'}<input type="file" accept="image/*" capture="environment" id="exPhotoFile" data-ex="${ex.id}" hidden></label>
+      ${photo ? `<button class="mini danger" data-action="ex-photo-remove" data-ex="${ex.id}">Remove</button>` : '<span class="muted small">a real photo, stored on this device</span>'}
+    </div>
+    <div class="instr">
+      <div class="ins"><span class="ik">How to use</span><p>${esc(g.use)}</p></div>
+      <div class="ins"><span class="ik">Do it well</span><p>${esc(g.efficient)}</p></div>
+      <div class="ins safe"><span class="ik">Stay safe</span><p>${esc(g.safe)}</p></div>
+    </div>
+  </div>`;
+  if (photo) loadExPhoto(ex.id);
+}
+async function loadExPhoto(id) {
+  const blob = await DB.getMeta('exphoto:' + id, null);
+  if (!blob) return;
+  if (sheetUrl) URL.revokeObjectURL(sheetUrl);
+  sheetUrl = URL.createObjectURL(blob);
+  const ill = $('#shIll');
+  if (ill) ill.innerHTML = `<img class="sh-photo-img" src="${sheetUrl}" alt="${esc((exById(id) || {}).name || 'machine')}">`;
+}
+async function handleExPhoto(file, id) {
+  try {
+    const photo = await Identify.preparePhoto(file);   // reuse the downscaler, no API call
+    await DB.setMeta('exphoto:' + id, photo.blob);
+    if (!hasExPhoto(id)) { App.exPhotoIds.push(id); await DB.setMeta('exPhotoIds', App.exPhotoIds); }
+    const ex = exById(id); if (ex) renderSheetInto(ensureSheet(), ex);
+    toast('Photo saved on this device');
+  } catch (err) { toast('Couldn’t read that image'); }
+}
+async function removeExPhoto(id) {
+  await DB.delete('meta', 'exphoto:' + id);
+  App.exPhotoIds = App.exPhotoIds.filter((x) => x !== id);
+  await DB.setMeta('exPhotoIds', App.exPhotoIds);
+  const ex = exById(id); if (ex) renderSheetInto(ensureSheet(), ex);
+  toast('Photo removed');
 }
 
 function viewGyms() {
@@ -176,8 +332,8 @@ function renderGymEditor(g) {
     html += list.map((e) => {
       const on = avail.has(e.id), fav = favs.has(e.id), av = avoids.has(e.id);
       return `<div class="mrow">
-        <label class="chk"><input type="checkbox" data-change="avail" data-id="${e.id}" ${on ? 'checked' : ''}> <span>${esc(e.name)}</span></label>
-        <div class="mrow-actions">${on ? `<button class="tag ${fav ? 'on' : ''}" data-action="fav" data-id="${e.id}" title="favourite">★</button><button class="tag ${av ? 'on danger' : ''}" data-action="avoid" data-id="${e.id}" title="never suggest">🚫</button>` : ''}</div>
+        <label class="chk"><input type="checkbox" data-change="avail" data-id="${e.id}" ${on ? 'checked' : ''}> <span class="mart">${Art.machineArt(e)}</span> <span>${esc(e.name)}</span></label>
+        <div class="mrow-actions"><button class="tag" data-action="ex-sheet" data-ex="${e.id}" title="details">ⓘ</button>${on ? `<button class="tag ${fav ? 'on' : ''}" data-action="fav" data-id="${e.id}" title="favourite">★</button><button class="tag ${av ? 'on danger' : ''}" data-action="avoid" data-id="${e.id}" title="never suggest">🚫</button>` : ''}</div>
       </div>`;
     }).join('');
   });
@@ -414,6 +570,7 @@ const handlers = {
   'avoid': (t) => toggleSet('avoid', t.dataset.id),
   'add-custom': (t) => addCustom(t.dataset.gym),
   'swap': (t) => swap(parseInt(t.dataset.idx, 10)),
+  'ex-sheet': (t) => openSheet(t.dataset.ex),
   'finish': finishWorkout,
   'export': exportData,
   'go-profile': () => { App.view = 'profile'; render(); },
@@ -439,7 +596,12 @@ const handlers = {
   }
 };
 
-function onClick(e) { const t = e.target.closest('[data-action]'); if (t && handlers[t.dataset.action]) handlers[t.dataset.action](t); }
+function onClick(e) {
+  const m = e.target.closest('[data-muscle]');
+  if (m) { e.stopPropagation(); openMusclePopover(m.dataset.muscle, m); return; }
+  const t = e.target.closest('[data-action]');
+  if (t && handlers[t.dataset.action]) handlers[t.dataset.action](t);
+}
 function onChange(e) {
   if (e.target.id === 'importFile') { const f = e.target.files && e.target.files[0]; if (f) importData(f); return; }
   if (e.target.id === 'photoFile') {
@@ -459,14 +621,18 @@ function onInput(e) {
   const ds = e.target.dataset;
   if (ds.field && ds.ex !== undefined) {
     const id = ds.ex, i = parseInt(ds.set, 10);
+    const had = (App.log[id] || []).some((s) => s && (s.weight != null || s.reps != null || s.minutes != null));
     App.log[id] = App.log[id] || [];
     App.log[id][i] = App.log[id][i] || {};
     App.log[id][i][ds.field] = e.target.value === '' ? null : Number(e.target.value);
+    const has = App.log[id].some((s) => s && (s.weight != null || s.reps != null || s.minutes != null));
+    if (had !== has) refreshCoverage();   // a muscle just flipped worked/not — update the map
   }
 }
 
 // ---------- render ----------
 function render() {
+  closeMusclePopover();   // anchors are about to be replaced
   document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === App.view));
   const c = $('#app');
   if (App.view === 'today') { if (!App.plan && currentGym()) generatePlan(); c.innerHTML = viewToday(); }
@@ -483,6 +649,7 @@ async function init() {
   App.customExercises = await DB.getAll('exercises');
   App.currentGymId = await DB.getMeta('currentGymId', null);
   App.aiKeySet = !!(await DB.getMeta('anthropicKey', null));
+  App.exPhotoIds = await DB.getMeta('exPhotoIds', []);
   if (!App.currentGymId && App.gyms.length) App.currentGymId = App.gyms[0].id;
   App.plan = null;
   if (App.view === 'today') generatePlan();
@@ -497,8 +664,14 @@ function setup() {
   document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => {
     App.view = b.dataset.view;
     if (App.view === 'today') { App.plan = null; generatePlan(); }
+    closeSheet();
     render();
   }));
+  // Dismiss the muscle tooltip on an outside tap / Escape / scroll; Escape also closes the sheet.
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-muscle]') && !e.target.closest('.mpop')) closeMusclePopover(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMusclePopover(); closeSheet(); } });
+  window.addEventListener('scroll', closeMusclePopover, true);
+  window.addEventListener('resize', closeMusclePopover);
   if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 

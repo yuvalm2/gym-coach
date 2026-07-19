@@ -69,10 +69,220 @@ const Art = (() => {
     upper_pull: 'lat-pulldown', core: 'crunch', calves: 'calf', conditioning: 'treadmill'
   };
 
-  function machineArt(ex) {
-    const key = (ex && (ID_ART[ex.id] || PATTERN_ART[ex.pattern])) || 'dumbbell';
-    return ART[key] || ART.dumbbell;
-  }
+  function artKey(ex) { return (ex && (ID_ART[ex.id] || PATTERN_ART[ex.pattern])) || 'dumbbell'; }
+  function machineArt(ex) { return ART[artKey(ex)] || ART.dumbbell; }
+
+  // ---- detailed illustrations (shown on demand in the exercise sheet) --------
+  // Richer, shaded drawings keyed by the same art keys. Colours are baked for
+  // the dark UI (via .d-* classes). Not every key is filled in yet;
+  // machineArtDetailed returns null when there's no drawing, so the caller can
+  // fall back to the simple line glyph or a user-supplied photo.
+  const md = (inner) => `<svg class="mid" viewBox="0 0 220 150" aria-hidden="true">${inner}</svg>`;
+  const floor = `<ellipse class="d-floor" cx="110" cy="140" rx="94" ry="7"/>`;
+  const arrow = (d, head) => `<path class="d-arrow" d="${d}"/><path class="d-arrow" d="${head}"/>`;
+  const dStack = (x, y) => `<rect class="d-stack" x="${x}" y="${y}" width="20" height="50" rx="3"/>`
+    + `<path class="d-cable" d="M${x + 2} ${y + 8} h16 M${x + 2} ${y + 18} h16 M${x + 2} ${y + 28} h16 M${x + 2} ${y + 38} h16"/>`;
+
+  const DETAIL = {
+    'leg-press': md(floor
+      + `<path class="d-frame" d="M24 126 H150"/>`
+      + `<rect class="d-pad" x="26" y="84" width="16" height="44" rx="6"/>`
+      + `<rect class="d-seat" x="34" y="118" width="52" height="12" rx="6"/>`
+      + `<path class="d-frame" d="M70 120 L166 48 M82 128 L178 56"/>`
+      + `<path class="d-bar" d="M150 44 L176 66"/>`
+      + `<circle class="d-plate" cx="150" cy="42" r="15"/><circle class="d-plate" cx="150" cy="42" r="7"/>`
+      + arrow('M104 100 L134 78', 'M134 78 l-10 2 M134 78 l2 10')),
+    'lat-pulldown': md(floor
+      + `<path class="d-frame" d="M40 24 V128 M40 26 H150"/>`
+      + `<circle class="d-plate" cx="150" cy="30" r="6"/>`
+      + `<path class="d-cable" d="M150 34 V52"/>`
+      + `<path class="d-bar" d="M130 54 H170"/>`
+      + `<rect class="d-seat" x="52" y="92" width="42" height="12" rx="6"/>`
+      + `<rect class="d-pad" x="58" y="70" width="30" height="10" rx="5"/>`
+      + `<path class="d-frame" d="M66 104 V126"/>`
+      + dStack(30, 70)
+      + arrow('M150 60 L150 84', 'M150 84 l-6 -9 M150 84 l6 -9')),
+    'chest-press': md(floor
+      + `<path class="d-frame" d="M150 40 V128"/>`
+      + `<rect class="d-pad" x="52" y="56" width="14" height="46" rx="6"/>`
+      + `<rect class="d-seat" x="60" y="100" width="46" height="12" rx="6"/>`
+      + `<path class="d-bar" d="M66 70 H140 M66 90 H140"/>`
+      + `<path class="d-bar" d="M140 64 V96"/>`
+      + dStack(150, 60)
+      + arrow('M96 80 L128 80', 'M128 80 l-9 -5 M128 80 l-9 5')),
+    'cable': md(floor
+      + `<path class="d-frame" d="M46 22 V128 M174 22 V128 M46 24 H174"/>`
+      + `<circle class="d-plate" cx="60" cy="40" r="6"/><circle class="d-plate" cx="160" cy="40" r="6"/>`
+      + `<path class="d-cable" d="M60 44 L98 92"/>`
+      + `<path class="d-bar" d="M94 90 l-7 9"/>`
+      + dStack(50, 66) + dStack(150, 66)
+      + arrow('M100 96 L124 78', 'M124 78 l-10 1 M124 78 l1 10')),
+    'treadmill': md(floor
+      + `<path class="d-frame" d="M150 120 V44 H108"/>`
+      + `<rect class="d-pad" x="148" y="38" width="28" height="18" rx="3"/>`
+      + `<path class="d-bar" d="M108 44 H90"/>`
+      + `<path class="d-belt" d="M28 124 L44 116 L150 116 L150 124 Z"/>`
+      + `<circle class="d-plate" cx="34" cy="122" r="6"/><circle class="d-plate" cx="146" cy="120" r="6"/>`
+      + arrow('M62 110 L104 106', 'M104 106 l-10 -2 M104 106 l-8 5')),
+    'barbell': md(floor
+      + `<rect class="d-pad" x="70" y="98" width="80" height="12" rx="6"/>`
+      + `<path class="d-frame" d="M84 110 V126 M136 110 V126 M60 58 V100 M160 58 V100"/>`
+      + `<path class="d-bar" d="M30 66 H190"/>`
+      + `<rect class="d-plate" x="44" y="52" width="10" height="28" rx="2"/><rect class="d-plate" x="33" y="56" width="8" height="20" rx="2"/>`
+      + `<rect class="d-plate" x="166" y="52" width="10" height="28" rx="2"/><rect class="d-plate" x="179" y="56" width="8" height="20" rx="2"/>`
+      + arrow('M110 84 V74', 'M110 74 l-5 8 M110 74 l5 8')),
+    'plank': md(floor
+      + `<path class="d-mat" d="M24 128 H196"/>`
+      + `<path class="d-body" d="M42 108 L148 84"/>`
+      + `<circle class="d-bodyfill" cx="156" cy="80" r="9"/>`
+      + `<path class="d-body" d="M50 108 V126 M58 100 V126"/>`
+      + `<path class="d-body" d="M138 88 L152 126"/>`),
+    'leg-extension': md(floor
+      + `<path class="d-frame" d="M28 126 H150"/>`
+      + `<rect class="d-pad" x="28" y="72" width="16" height="52" rx="6"/>`
+      + `<rect class="d-seat" x="38" y="112" width="54" height="12" rx="6"/>`
+      + `<circle class="d-plate" cx="96" cy="110" r="11"/>`
+      + `<path class="d-frame" d="M96 110 L154 82"/>`
+      + `<rect class="d-pad" x="150" y="76" width="12" height="20" rx="5"/>`
+      + arrow('M116 100 L148 86', 'M148 86 l-10 1 M148 86 l-1 -9')),
+    'leg-curl': md(floor
+      + `<path class="d-frame" d="M28 126 H150"/>`
+      + `<rect class="d-pad" x="28" y="74" width="16" height="50" rx="6"/>`
+      + `<rect class="d-seat" x="38" y="112" width="54" height="12" rx="6"/>`
+      + `<rect class="d-pad" x="70" y="94" width="26" height="10" rx="5"/>`
+      + `<circle class="d-plate" cx="96" cy="112" r="10"/>`
+      + `<path class="d-frame" d="M96 112 L150 124"/>`
+      + `<rect class="d-pad" x="146" y="118" width="12" height="16" rx="5"/>`
+      + arrow('M118 118 L146 124', 'M146 124 l-10 -2 M146 124 l-5 6')),
+    'squat': md(floor
+      + `<path class="d-frame" d="M56 128 V34 M164 128 V34 M56 40 H164"/>`
+      + `<path class="d-bar" d="M40 74 H180"/>`
+      + `<circle class="d-plate" cx="52" cy="74" r="12"/><circle class="d-plate" cx="168" cy="74" r="12"/>`
+      + `<circle class="d-bodyfill" cx="110" cy="60" r="8"/>`
+      + `<path class="d-body" d="M110 68 V96 M110 96 L98 122 M110 96 L122 122"/>`
+      + arrow('M136 96 V80', 'M136 80 l-5 8 M136 80 l5 8')),
+    'hip-thrust': md(floor
+      + `<rect class="d-pad" x="34" y="86" width="70" height="12" rx="6"/>`
+      + `<path class="d-frame" d="M44 98 V122 M92 98 V122"/>`
+      + `<circle class="d-bodyfill" cx="92" cy="80" r="8"/>`
+      + `<path class="d-body" d="M98 86 L128 90 L150 122"/>`
+      + `<path class="d-bar" d="M108 74 H150"/>`
+      + `<circle class="d-plate" cx="118" cy="74" r="11"/><circle class="d-plate" cx="140" cy="74" r="11"/>`
+      + arrow('M129 90 V78', 'M129 78 l-5 8 M129 78 l5 8')),
+    'hip-abduction': md(floor
+      + `<path class="d-frame" d="M110 128 V54"/>`
+      + `<rect class="d-seat" x="82" y="98" width="56" height="14" rx="6"/>`
+      + `<rect class="d-pad" x="66" y="72" width="12" height="28" rx="5"/>`
+      + `<rect class="d-pad" x="142" y="72" width="12" height="28" rx="5"/>`
+      + `<path class="d-frame" d="M110 92 L72 86 M110 92 L148 86"/>`
+      + `<circle class="d-plate" cx="110" cy="92" r="10"/>`
+      + arrow('M96 96 L76 90', 'M76 90 l9 -1 M76 90 l-1 8')
+      + arrow('M124 96 L144 90', 'M144 90 l-9 -1 M144 90 l1 8')),
+    'back-extension': md(floor
+      + `<path class="d-frame" d="M44 128 H150"/>`
+      + `<path class="d-frame" d="M110 128 L92 76"/>`
+      + `<rect class="d-seat" x="82" y="70" width="20" height="12" rx="6"/>`
+      + `<rect class="d-pad" x="140" y="112" width="14" height="10" rx="4"/>`
+      + `<path class="d-body" d="M92 74 L150 116"/>`
+      + `<path class="d-body" d="M92 74 L54 92"/>`
+      + `<circle class="d-bodyfill" cx="48" cy="96" r="8"/>`
+      + arrow('M64 104 V88', 'M64 88 l-5 8 M64 88 l5 8')),
+    'dumbbell': md(floor
+      + `<rect class="d-pad" x="60" y="96" width="100" height="12" rx="6"/>`
+      + `<path class="d-frame" d="M74 108 V126 M146 108 V126 M110 108 V126"/>`
+      + `<path class="d-bar" d="M96 66 H124"/>`
+      + `<rect class="d-plate" x="84" y="56" width="12" height="20" rx="3"/><rect class="d-plate" x="124" y="56" width="12" height="20" rx="3"/>`
+      + arrow('M110 84 V72', 'M110 72 l-5 8 M110 72 l5 8')),
+    'pec-deck': md(floor
+      + `<path class="d-frame" d="M110 128 V44"/>`
+      + `<rect class="d-seat" x="94" y="98" width="34" height="12" rx="6"/>`
+      + `<rect class="d-pad" x="102" y="60" width="14" height="38" rx="6"/>`
+      + `<path class="d-frame" d="M110 66 L74 58 M110 66 L146 58"/>`
+      + `<rect class="d-pad" x="64" y="48" width="10" height="24" rx="5"/><rect class="d-pad" x="146" y="48" width="10" height="24" rx="5"/>`
+      + arrow('M84 62 L100 66', 'M100 66 l-10 -2 M100 66 l-5 7')
+      + arrow('M136 62 L120 66', 'M120 66 l10 -2 M120 66 l5 7')),
+    'shoulder-press': md(floor
+      + `<path class="d-frame" d="M40 126 H150"/>`
+      + `<rect class="d-pad" x="60" y="66" width="14" height="48" rx="6"/>`
+      + `<rect class="d-seat" x="68" y="110" width="44" height="12" rx="6"/>`
+      + `<path class="d-bar" d="M76 68 V42 M104 68 V42 M76 42 H104"/>`
+      + dStack(150, 58)
+      + arrow('M124 60 V44', 'M124 44 l-5 8 M124 44 l5 8')),
+    'assisted': md(floor
+      + `<path class="d-frame" d="M50 24 V128 M170 24 V128 M50 26 H170"/>`
+      + `<path class="d-bar" d="M78 26 V40 M142 26 V40"/>`
+      + `<path class="d-bar" d="M96 60 H124"/>`
+      + `<rect class="d-seat" x="94" y="86" width="32" height="12" rx="6"/>`
+      + `<path class="d-frame" d="M110 98 V118"/>`
+      + dStack(150, 66)
+      + arrow('M110 82 V62', 'M110 62 l-5 8 M110 62 l5 8')),
+    'row': md(floor
+      + `<path class="d-frame" d="M150 126 V60"/>`
+      + `<rect class="d-seat" x="116" y="98" width="42" height="12" rx="6"/>`
+      + `<rect class="d-pad" x="150" y="66" width="12" height="34" rx="6"/>`
+      + `<path class="d-cable" d="M150 80 L86 84"/>`
+      + `<path class="d-bar" d="M82 78 V90"/>`
+      + dStack(160, 66)
+      + arrow('M96 82 L118 82', 'M118 82 l-9 -4 M118 82 l-9 4')),
+    'crunch': md(floor
+      + `<path class="d-frame" d="M40 126 H150"/>`
+      + `<rect class="d-pad" x="60" y="46" width="40" height="12" rx="6"/>`
+      + `<path class="d-bar" d="M80 46 V34"/>`
+      + `<path class="d-frame" d="M64 58 V96"/>`
+      + `<circle class="d-plate" cx="64" cy="98" r="9"/>`
+      + `<rect class="d-seat" x="64" y="104" width="44" height="12" rx="6"/>`
+      + dStack(150, 58)
+      + arrow('M92 62 V80', 'M92 80 l-5 -8 M92 80 l5 -8')),
+    'captains': md(floor
+      + `<path class="d-frame" d="M70 128 V40 M70 42 H86"/>`
+      + `<rect class="d-pad" x="70" y="60" width="12" height="40" rx="5"/>`
+      + `<rect class="d-pad" x="82" y="72" width="26" height="10" rx="5"/>`
+      + `<rect class="d-pad" x="82" y="88" width="26" height="10" rx="5"/>`
+      + `<circle class="d-bodyfill" cx="92" cy="66" r="7"/>`
+      + `<path class="d-body" d="M92 74 V96 L120 96 L120 84"/>`
+      + arrow('M132 100 V84', 'M132 84 l-5 8 M132 84 l5 8')),
+    'calf': md(floor
+      + `<path class="d-frame" d="M60 128 V40 M150 128 V40 M60 52 H150"/>`
+      + `<rect class="d-pad" x="88" y="48" width="34" height="10" rx="5"/>`
+      + `<circle class="d-bodyfill" cx="105" cy="40" r="7"/>`
+      + `<path class="d-body" d="M105 58 V104 M105 104 L98 116 M105 104 L112 116"/>`
+      + `<path class="d-bar" d="M86 116 H124"/>`
+      + dStack(154, 64)
+      + arrow('M138 108 V92', 'M138 92 l-5 8 M138 92 l5 8')),
+    'bike': md(floor
+      + `<circle class="d-frame" cx="70" cy="104" r="24"/>`
+      + `<circle class="d-plate" cx="70" cy="104" r="8"/>`
+      + `<path class="d-frame" d="M70 104 L112 60 L150 104"/>`
+      + `<circle class="d-plate" cx="150" cy="104" r="6"/>`
+      + `<path class="d-bar" d="M112 60 V40 H92"/>`
+      + `<path class="d-frame" d="M126 66 L140 50"/>`
+      + `<rect class="d-seat" x="132" y="44" width="22" height="8" rx="4"/>`),
+    'elliptical': md(floor
+      + `<path class="d-frame" d="M40 118 H150"/>`
+      + `<circle class="d-plate" cx="150" cy="96" r="14"/>`
+      + `<path class="d-frame" d="M40 118 L60 96 L150 96"/>`
+      + `<rect class="d-pad" x="52" y="112" width="24" height="8" rx="3"/>`
+      + `<path class="d-frame" d="M150 96 V40"/>`
+      + `<path class="d-bar" d="M150 52 L120 44 M150 52 L118 66"/>`
+      + `<rect class="d-pad" x="146" y="32" width="26" height="12" rx="3"/>`
+      + arrow('M70 106 L104 104', 'M104 104 l-9 -2 M104 104 l-8 5')),
+    'rower': md(floor
+      + `<path class="d-frame" d="M28 116 H186"/>`
+      + `<circle class="d-frame" cx="42" cy="92" r="18"/>`
+      + `<circle class="d-plate" cx="42" cy="92" r="9"/>`
+      + `<path class="d-cable" d="M58 92 H118"/>`
+      + `<path class="d-bar" d="M118 86 V98"/>`
+      + `<rect class="d-seat" x="122" y="104" width="24" height="8" rx="4"/>`
+      + `<rect class="d-pad" x="40" y="112" width="16" height="8" rx="3"/>`
+      + arrow('M100 92 L134 92', 'M134 92 l-9 -4 M134 92 l-9 4')),
+    'stairs': md(floor
+      + `<path class="d-belt" d="M36 128 L36 108 L60 108 L60 92 L84 92 L84 76 L108 76 L108 60 L132 60 L132 128 Z"/>`
+      + `<path class="d-frame" d="M132 60 V36 H150"/>`
+      + `<rect class="d-pad" x="128" y="30" width="30" height="14" rx="3"/>`
+      + `<path class="d-bar" d="M132 52 H106"/>`
+      + arrow('M96 84 V70', 'M96 70 l-5 8 M96 70 l5 8'))
+  };
+  function machineArtDetailed(ex) { return DETAIL[artKey(ex)] || null; }
 
   // ---- muscle body map ------------------------------------------------------
   // A front + back figure. The silhouette is drawn once per side (`FIGURE`);
@@ -95,9 +305,11 @@ const Art = (() => {
     <rect class="bm-base" x="40" y="160" width="9" height="40" rx="4"/>
     <rect class="bm-base" x="51" y="160" width="9" height="40" rx="4"/>`;
 
-  const hi = (d) => `<path class="bm-hi" d="${d}"/>`;
-  const hiRect = (x, y, w, h, r) => `<rect class="bm-hi" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}"/>`;
-  const delts = `<circle class="bm-hi" cx="30" cy="44" r="9"/><circle class="bm-hi" cx="70" cy="44" r="9"/>`;
+  // Region geometry is stored class-free; `paint()` colours it per use — the
+  // single-muscle tooltip, an exercise's primary/secondary, or 3-state coverage.
+  const hi = (d) => `<path d="${d}"/>`;
+  const hiRect = (x, y, w, h, r) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}"/>`;
+  const delts = `<circle cx="30" cy="44" r="9"/><circle cx="70" cy="44" r="9"/>`;
 
   // muscle key -> { name, blurb, front, back }  (front/back are highlight SVG)
   const MUSCLE_INFO = {
@@ -131,23 +343,44 @@ const Art = (() => {
                   front: hi('M50 58 C44 48 33 51 40 60 C44 66 50 69 50 69 C50 69 56 66 60 60 C67 51 56 48 50 58 Z') }
   };
 
+  const paint = (shapes, cls) => (shapes || '').replace(/<(path|rect|circle|ellipse)\b/g, `<$1 class="${cls}"`);
+  const svgWrap = (f, b) => `<svg class="bm" viewBox="0 0 216 216" aria-hidden="true">`
+    + `<g transform="translate(6,4)">${FIGURE}${f}</g>`
+    + `<g transform="translate(116,4)">${FIGURE}${b}</g>`
+    + `<text class="bm-label" x="56" y="214">Front</text>`
+    + `<text class="bm-label" x="166" y="214">Back</text></svg>`;
+
+  // A single muscle lit up — used by the per-muscle name tooltip.
   function bodyMap(keys) {
-    let front = '', back = '';
-    (keys || []).forEach((k) => {
-      const r = MUSCLE_INFO[k];
-      if (!r) return;
-      front += r.front || '';
-      back += r.back || '';
-    });
-    return `<svg class="bm" viewBox="0 0 216 216" aria-hidden="true">
-      <g transform="translate(6,4)">${FIGURE}${front}</g>
-      <g transform="translate(116,4)">${FIGURE}${back}</g>
-      <text class="bm-label" x="56" y="214">Front</text>
-      <text class="bm-label" x="166" y="214">Back</text>
-    </svg>`;
+    let f = '', b = '';
+    (keys || []).forEach((k) => { const r = MUSCLE_INFO[k]; if (r) { f += paint(r.front, 'bm-hi'); b += paint(r.back, 'bm-hi'); } });
+    return svgWrap(f, b);
   }
 
-  return { machineArt, bodyMap, MUSCLE_INFO };
+  // One exercise's muscles — primary solid, secondary faded. For the exercise tooltip.
+  function exerciseMap(primary, secondary) {
+    let f = '', b = '';
+    (secondary || []).forEach((k) => { const r = MUSCLE_INFO[k]; if (r) { f += paint(r.front, 'bm-hi2'); b += paint(r.back, 'bm-hi2'); } });
+    (primary || []).forEach((k) => { const r = MUSCLE_INFO[k]; if (r) { f += paint(r.front, 'bm-hi'); b += paint(r.back, 'bm-hi'); } });
+    return svgWrap(f, b);
+  }
+
+  // Session coverage — state per muscle: 'done' (worked this visit),
+  // 'plan' (in today's plan, not yet), 'off' (not in today's plan).
+  function coverageMap(state) {
+    const st = state || {};
+    let f = '', b = '';
+    ['off', 'plan', 'done'].forEach((s) => {          // draw dim first, worked on top
+      Object.keys(MUSCLE_INFO).forEach((k) => {
+        if ((st[k] || 'off') !== s) return;
+        const r = MUSCLE_INFO[k];
+        f += paint(r.front, 'bm-' + s); b += paint(r.back, 'bm-' + s);
+      });
+    });
+    return svgWrap(f, b);
+  }
+
+  return { machineArt, machineArtDetailed, bodyMap, exerciseMap, coverageMap, MUSCLE_INFO };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = Art;

@@ -123,3 +123,100 @@ button { font: inherit; cursor: pointer; border: none; border-radius: 10px; }
   box-shadow: 0 8px 24px rgba(0,0,0,.4);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== machine art + muscle tooltips + exercise sheet + coverage ===== */
+
+/* machine icon thumb on Today cards */
+.ex-art { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; width: 52px; height: 44px; flex-shrink: 0; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.ex-art:active { border-color: var(--accent); color: #7ee2a8; }
+.ex-art .mi { width: 100%; height: 100%; }
+.ex-main { flex: 1; min-width: 0; }
+.mi { display: block; }
+
+/* muscle name tags (tap for the tooltip) */
+.mtag { background: none; border: none; padding: 0; margin: 0; font: inherit; font-size: 13px; color: var(--text); cursor: pointer; border-bottom: 1px dotted var(--muted); line-height: 1.35; }
+.mtag.muted { color: var(--muted); border-bottom-color: var(--line); }
+.mtag:active { color: var(--accent); border-bottom-color: var(--accent); }
+.msep { color: var(--muted); }
+
+/* machine icon in the gym editor rows */
+.mart { width: 30px; height: 22px; flex-shrink: 0; color: var(--muted); display: inline-flex; align-items: center; }
+.mart .mi { width: 100%; height: 100%; }
+
+/* muscle body-map paint (shared by tooltip, exercise map, coverage) */
+.bm { display: block; }
+.bm-base { fill: #222833; stroke: #39424f; stroke-width: 1; }
+.bm-hi { fill: var(--accent); stroke: none; }
+.bm-hi2 { fill: var(--accent); opacity: .42; stroke: none; }
+.bm-done { fill: var(--accent); stroke: none; }
+.bm-plan { fill: #e0a83a; stroke: none; }
+.bm-off { fill: #2f3947; stroke: none; }
+.bm-label { fill: var(--muted); font-size: 12px; text-anchor: middle; font-family: inherit; }
+
+/* detailed illustration paint */
+.mid { display: block; width: 100%; height: auto; }
+.d-floor { fill: rgba(0,0,0,.30); }
+.d-frame { fill: none; stroke: #8a94a6; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.d-bar { fill: none; stroke: #aab3c2; stroke-width: 7; stroke-linecap: round; }
+.d-cable { fill: none; stroke: #5b6472; stroke-width: 2; stroke-linecap: round; }
+.d-pad { fill: #39424f; stroke: #4a5462; stroke-width: 1.5; }
+.d-seat { fill: #2f6b46; stroke: #3f8a5c; stroke-width: 1.5; }
+.d-plate { fill: #4b5563; stroke: #20252e; stroke-width: 1.5; }
+.d-stack { fill: #2b323c; stroke: #4a5462; stroke-width: 1.5; }
+.d-belt { fill: #20252e; stroke: #4a5462; stroke-width: 1.5; }
+.d-mat { fill: none; stroke: #4a5462; stroke-width: 4; stroke-linecap: round; }
+.d-body { fill: none; stroke: #6fae86; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+.d-bodyfill { fill: #6fae86; }
+.d-arrow { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+/* muscle tooltip popover */
+.mpop { position: fixed; z-index: 60; width: min(320px, calc(100vw - 16px)); background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+.mpop[hidden] { display: none; }
+.mpop-h { font-weight: 700; font-size: 15px; text-transform: capitalize; margin-bottom: 8px; }
+.mpop-map { display: flex; justify-content: center; }
+.mpop-map .bm { width: 100%; max-width: 220px; height: auto; }
+.mpop-d { color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.45; }
+
+/* session coverage card */
+.card.coverage { padding: 14px; }
+.cov-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.cov-h { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.cov-count { font-size: 22px; font-weight: 800; letter-spacing: -.02em; flex-shrink: 0; }
+.cov-count small { font-size: 13px; color: var(--muted); font-weight: 500; }
+.cov-body { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: center; }
+.cov-map .bm { width: 100%; height: auto; }
+.cov-side { display: flex; flex-direction: column; gap: 7px; }
+.cov-leg { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--muted); }
+.dot { width: 13px; height: 13px; border-radius: 4px; flex-shrink: 0; }
+.dot.done { background: var(--accent); } .dot.plan { background: #e0a83a; } .dot.off { background: #2f3947; border: 1px solid #3b4552; }
+.cov-still { margin: 5px 0 0; font-size: 13px; color: var(--muted); }
+.cov-still b { color: #f2c46b; } .cov-still.done { color: #7ee2a8; }
+
+/* exercise detail sheet */
+body.modal-open { overflow: hidden; }
+.sheet-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(6,8,11,.66); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; }
+.sheet-overlay[hidden] { display: none; }
+.sheet-card { position: relative; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px 18px 0 0; padding: 18px 16px calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 40px rgba(0,0,0,.5); }
+.sheet-x { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; background: var(--card2); border: 1px solid var(--line); color: var(--muted); border-radius: 9px; font-size: 15px; }
+.sheet-head { display: flex; align-items: baseline; gap: 10px; margin: 2px 42px 14px 2px; }
+.sheet-head .sname { font-weight: 700; font-size: 19px; }
+.sheet-vis { display: grid; grid-template-columns: 1.25fr 1fr; gap: 12px; align-items: center; }
+.sh-ill { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 8px; min-height: 108px; display: flex; align-items: center; justify-content: center; }
+.sh-ill .mid { width: 100%; height: auto; }
+.sh-photo-img { width: 100%; border-radius: 8px; display: block; }
+.sh-map { text-align: center; }
+.sh-map .bm { width: 100%; max-width: 168px; height: auto; }
+.worklist { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.wp { font-size: 12.5px; font-weight: 600; color: #7ee2a8; }
+.ws { font-size: 12px; color: var(--muted); }
+.sh-photo { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.instr { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.ins .ik { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.ins p { margin: 3px 0 0; font-size: 14px; line-height: 1.5; }
+.ins.safe { background: var(--amber); border: 1px solid var(--amber-b); border-radius: 10px; padding: 9px 11px; }
+.ins.safe .ik { color: #e0a83a; }
+
+@media (min-width: 560px) {
+  .sheet-overlay { align-items: center; padding: 20px; }
+  .sheet-card { border-radius: 18px; }
+}
